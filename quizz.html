@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Arena - Multiplayer</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#17153b,#6558d3);color:#292743;min-height:100vh;padding:20px}
+.container{max-width:900px;margin:30px auto;background:white;border-radius:20px;padding:28px;box-shadow:0 12px 40px #0003}
+h1{text-align:center;color:#6558d3;margin-top:0}
+.subtitle{text-align:center;color:#777;margin-bottom:25px}
+input,select,textarea{width:100%;padding:14px;margin:10px 0;border:1px solid #ddd;border-radius:10px;font-size:16px;font-family:Arial,sans-serif}
+textarea{min-height:85px;resize:vertical}
+button{border:0;border-radius:10px;padding:13px 20px;background:#6558d3;color:white;font-size:15px;cursor:pointer;margin:5px}
+button:hover{background:#5143bd}
+button:disabled{opacity:.5;cursor:not-allowed}
+.secondary{background:#eee;color:#333}
+.card{background:#f5f4ff;padding:18px;border-radius:14px;margin:15px 0}
+.hidden{display:none}
+.admin-note{font-size:13px;color:#777;text-align:center}
+.admin-panel{border:1px solid #e5e2fa;background:#f5f4ff;padding:18px;border-radius:14px;margin:15px 0}
+.admin-actions{text-align:center}
+.pin{font-size:36px;font-weight:bold;letter-spacing:7px;color:#6558d3;text-align:center}
+.player{background:white;border:1px solid #e5e2fa;padding:12px;border-radius:9px;margin:7px 0;display:flex;justify-content:space-between}
+.option{display:block;width:100%;text-align:left;background:#f0efff;color:#292743;border:2px solid transparent;margin:10px 0}
+.option:hover{border-color:#6558d3;background:#e8e5ff}
+.option.selected{background:#dcd7ff;border-color:#6558d3}
+.timer{text-align:center;font-size:24px;font-weight:bold;color:#6558d3}
+.status{text-align:center;color:#777;margin:12px}
+#message{color:#d04b4b;text-align:center;margin:12px}
+table{width:100%;border-collapse:collapse}
+td,th{padding:12px;border-bottom:1px solid #ddd;text-align:left}
+.field-label{display:block;font-weight:bold;margin-top:12px;color:#403b70}
+.question-bank-item{background:white;border:1px solid #e5e2fa;padding:12px;border-radius:10px;margin:8px 0}
+.small-note{font-size:13px;color:#777;line-height:1.5}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.admin-panel h3{margin-top:5px}
+.question-bank-item button{padding:8px 12px;font-size:13px}
+/* EXISTING HOME DASHBOARD DESIGN - KEPT UNCHANGED */
+.home-hero{background:linear-gradient(135deg,#211b50,#6558d3);color:white;padding:30px;border-radius:18px;margin-bottom:25px}
+.home-hero h2{font-size:28px;margin:0 0 10px}
+.home-hero p{color:#e1ddff;line-height:1.6;margin-bottom:0}
+.feature-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px}
+.feature{background:#ffffff20;padding:14px 8px;border-radius:12px;text-align:center;font-size:13px;line-height:1.7}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.home-card{padding:24px;border-radius:17px;border:1px solid #e7e3ff;background:#faf9ff}
+.home-card.join{background:#f2faff;border-color:#dcefff}
+.home-icon{font-size:42px;margin-bottom:12px}
+.home-card h3{margin:12px 0 8px}
+.home-card p{color:#777;font-size:14px;line-height:1.6}
+.home-tag{display:inline-block;padding:7px 12px;border-radius:20px;background:#e8e3ff;color:#6558d3;font-size:12px;font-weight:bold}
+.join .home-tag{background:#dcefff;color:#2874a5}
+.home-card button{width:100%;margin:12px 0 0;padding:14px}
+.home-help{text-align:center;margin-top:24px;background:#f5f4ff;padding:18px;border-radius:14px}
+.home-help h3{margin-top:0}
+.home-help p{color:#777;font-size:14px;line-height:1.7;margin:5px 0}
+@media(max-width:600px){.container{padding:17px;margin:10px auto}.home-grid{grid-template-columns:1fr}.feature-row{grid-template-columns:repeat(3,1fr)}.home-hero{padding:22px}.home-hero h2{font-size:23px}.pin{font-size:29px}.form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>⚡ Quiz Arena</h1>
+<p class="subtitle">Real-time multiplayer quiz</p>
+
+<div id="home">
+ <div class="home-hero">
+  <h2>Welcome to Quiz Arena! ⚡</h2>
+  <p>Think fast, answer smart and compete with friends in exciting live quiz battles.</p>
+  <div class="feature-row">
+   <div class="feature">🎯<br>Test Knowledge</div>
+   <div class="feature">⚡<br>Beat the Timer</div>
+   <div class="feature">🏆<br>Win Rewards</div>
+  </div>
+ </div>
+ <h2 style="text-align:center;color:#292743;margin-bottom:20px">Choose Your Game Mode</h2>
+ <div class="home-grid">
+  <div class="home-card">
+   <div class="home-icon">🎮</div><span class="home-tag">HOST MODE</span>
+   <h3>Create a Quiz Room</h3>
+   <p>Become the host, create a game room and invite your friends using a PIN.</p>
+   <button onclick="showAdminLogin()">Host a Quiz →</button>
+  </div>
+  <div class="home-card join">
+   <div class="home-icon">🚀</div><span class="home-tag">PLAYER MODE</span>
+   <h3>Join a Competition</h3>
+   <p>Enter your player name and six-digit room PIN to join the live quiz.</p>
+   <input id="playerName" placeholder="Enter your name">
+   <input id="joinPin" placeholder="Enter 6-digit room PIN" maxlength="6" inputmode="numeric">
+   <button onclick="joinGame()">Join Competition →</button>
+  </div>
+ </div>
+ <div class="home-help">
+  <h3>💡 How to Play</h3>
+  <p>1. Host creates a room.</p><p>2. Players join using the room PIN.</p>
+  <p>3. Answer questions before time runs out.</p><p>4. Compete for the top leaderboard position!</p>
+ </div>
+</div>
+
+<div id="adminLogin" class="hidden">
+ <h2>Admin Login</h2><div class="card">
+  <input id="adminUsername" placeholder="Admin username" autocomplete="username">
+  <input id="adminPassword" type="password" placeholder="Admin password" autocomplete="current-password">
+  <button onclick="adminLogin()">Login</button>
+  <button class="secondary" onclick="show('home')">Back</button>
+  <p class="admin-note">Admin access only. Players do not need to log in.</p>
+ </div>
+</div>
+
+<div id="adminPanel" class="hidden">
+ <h2>Admin Dashboard</h2>
+ <div class="admin-panel">
+  <h3>1. Add Questions to Your Question Bank</h3>
+  <p class="small-note">Add your own questions. These are saved in this browser. Select the matching category, topic, type and difficulty.</p>
+  <label class="field-label" for="newCategory">Category</label>
+  <select id="newCategory">
+   <option>Science</option><option>Mathematics</option><option>Computer Science</option><option>Artificial Intelligence</option><option>General Knowledge</option><option>History</option><option>Geography</option><option>Sports</option><option>Technology</option><option>Programming</option>
+  </select>
+  <label class="field-label" for="newTopic">Topic</label>
+  <input id="newTopic" placeholder="Example: Cell Biology">
+  <div class="form-grid">
+   <div><label class="field-label" for="newType">Question Type</label>
+    <select id="newType" onchange="updateQuestionForm()">
+     <option value="mcq">Multiple Choice (MCQ)</option><option value="truefalse">True or False</option><option value="fill">Fill in the Blanks</option><option value="oneword">One-word Answer</option>
+    </select>
+   </div>
+   <div><label class="field-label" for="newDifficulty">Difficulty</label>
+    <select id="newDifficulty"><option>Easy</option><option>Medium</option><option>Hard</option></select>
+   </div>
+  </div>
+  <label class="field-label" for="newQuestion">Question</label>
+  <textarea id="newQuestion" placeholder="Type your question here"></textarea>
+  <div id="mcqFields">
+   <label class="field-label">Options</label>
+   <input id="opt0" placeholder="Option 1"><input id="opt1" placeholder="Option 2"><input id="opt2" placeholder="Option 3"><input id="opt3" placeholder="Option 4">
+  </div>
+  <div id="answerFields">
+   <label class="field-label" for="newAnswer">Correct Answer</label>
+   <input id="newAnswer" placeholder="Enter the correct answer">
+  </div>
+  <div id="trueFalseFields" class="hidden">
+   <label class="field-label" for="tfAnswer">Correct Answer</label>
+   <select id="tfAnswer"><option value="true">True</option><option value="false">False</option></select>
+  </div>
+  <div id="mcqCorrectField">
+   <label class="field-label" for="correctOption">Correct Option</label>
+   <select id="correctOption"><option value="0">Option 1</option><option value="1">Option 2</option><option value="2">Option 3</option><option value="3">Option 4</option></select>
+  </div>
+  <button onclick="addQuestionToBank()">＋ Add Question</button>
+  <div id="bankMessage" class="small-note"></div>
+ </div>
+ <div class="admin-panel">
+  <h3>2. Choose Your Quiz Settings</h3>
+  <label class="field-label" for="filterCategory">Category</label>
+  <select id="filterCategory">
+   <option value="All">All Categories</option><option>Science</option><option>Mathematics</option><option>Computer Science</option><option>Artificial Intelligence</option><option>General Knowledge</option><option>History</option><option>Geography</option><option>Sports</option><option>Technology</option><option>Programming</option>
+  </select>
+  <label class="field-label" for="filterTopic">Topic</label>
+  <input id="filterTopic" placeholder="Enter topic, or leave blank for all topics">
+  <div class="form-grid">
+   <div><label class="field-label" for="filterType">Question Type</label>
+    <select id="filterType"><option value="All">All Types</option><option value="mcq">Multiple Choice (MCQ)</option><option value="truefalse">True or False</option><option value="fill">Fill in the Blanks</option><option value="oneword">One-word Answer</option></select>
+   </div>
+   <div><label class="field-label" for="filterDifficulty">Difficulty</label>
+    <select id="filterDifficulty"><option value="Mixed">Mixed</option><option>Easy</option><option>Medium</option><option>Hard</option></select>
+   </div>
+  </div>
+  <label class="field-label" for="questionCount">How many questions?</label>
+  <select id="questionCount" onchange="toggleCustomCount()"><option value="5">5 Questions</option><option value="10" selected>10 Questions</option><option value="15">15 Questions</option><option value="20">20 Questions</option><option value="25">25 Questions</option><option value="custom">Custom Number</option></select>
+  <input id="customCount" class="hidden" type="number" min="1" max="100" placeholder="Enter number of questions (1-100)">
+  <p class="small-note" id="availableCount">Questions available: 10</p>
+  <p class="small-note">Every player receives the same selected question set in a different random order. Time per question: 10 seconds.</p>
+  <div class="admin-actions">
+   <button onclick="createGame()">Create Game</button>
+   <button class="secondary" onclick="adminLogout()">Logout</button>
+  </div>
+ </div>
+ <div class="admin-panel">
+  <h3>3. Your Question Bank</h3>
+  <div id="questionBankList"></div>
+ </div>
+</div>
+
+<div id="lobby" class="hidden">
+ <h2 id="lobbyTitle">Game Lobby</h2>
+ <p class="status">Share this PIN with other players:</p>
+ <div class="pin" id="gamePin"></div>
+ <h3>Players joined</h3><div id="playerList"></div>
+ <p class="status" id="lobbyStatus"></p>
+ <button id="startButton" onclick="startGame()" class="hidden">Start Quiz</button>
+ <button class="secondary" onclick="location.reload()">Leave Game</button>
+</div>
+
+<div id="quiz" class="hidden">
+ <p class="status" id="questionNumber"></p>
+ <div class="timer" id="timer">10 seconds</div>
+ <div class="card">
+  <h2 id="questionText"></h2><div id="options"></div>
+  <div id="textAnswerArea" class="hidden"><input id="typedAnswer" placeholder="Type your answer"><button id="submitTextAnswer" onclick="submitTextAnswer()">Submit Answer</button></div>
+ </div>
+ <p class="status" id="answerStatus"></p>
+ <div id="liveScores"></div>
+</div>
+
+<div id="results" class="hidden">
+ <h2>🏆 Final Leaderboard</h2><div id="finalScores"></div>
+ <button onclick="location.reload()">Back to Home</button>
+</div>
+<p id="message"></p>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, get, update, onValue, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+ apiKey: "AIzaSyDmMPVqyNCecSsq09sCWnliFRkKrFqEclQ",
+ authDomain: "quiz-arena-9.firebaseapp.com",
+ databaseURL: "https://quiz-arena-9-default-rtdb.firebaseio.com",
+ projectId: "quiz-arena-9",
+ storageBucket: "quiz-arena-9.firebasestorage.app",
+ messagingSenderId: "82147358200",
+ appId: "1:82147358200:web:743f15eca0916935ccd20d",
+ measurementId: "G-KYYZ35KRJD"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+let uid=null, roomCode=null, isHost=false, isAdminLoggedIn=false;
+let roomData=null, playerGame=null, timerInterval=null, advanceTimeout=null;
+let currentQuestionShown=-1, playerGameListening=false, initializingPlayerGame=false;
+const QUESTION_SECONDS=10;
+const WAIT_SECONDS=2;
+const ADMIN_USERNAME="admin";
+const ADMIN_PASSWORD="QuizAdmin123";
+const $=id=>document.getElementById(id);
+
+const DEFAULT_QUESTIONS=[
+ {category:"Science",topic:"Cell Biology",type:"mcq",difficulty:"Easy",q:"Which organelle is known as the powerhouse of the cell?",options:["Nucleus","Mitochondria","Ribosome","Golgi body"],answer:1},
+ {category:"Science",topic:"Chemistry",type:"mcq",difficulty:"Easy",q:"What is the chemical symbol for water?",options:["CO2","O2","H2O","NaCl"],answer:2},
+ {category:"Science",topic:"Human Biology",type:"mcq",difficulty:"Easy",q:"Which vitamin is produced in the skin by sunlight?",options:["Vitamin A","Vitamin B12","Vitamin C","Vitamin D"],answer:3},
+ {category:"Science",topic:"Cell Biology",type:"mcq",difficulty:"Easy",q:"What is the basic unit of life?",options:["Tissue","Organ","Cell","Atom"],answer:2},
+ {category:"Science",topic:"Genetics",type:"mcq",difficulty:"Easy",q:"Which molecule carries genetic information?",options:["DNA","Glucose","Lipid","Starch"],answer:0},
+ {category:"Science",topic:"Human Biology",type:"mcq",difficulty:"Easy",q:"Which blood cells help in clotting?",options:["RBCs","Platelets","Neurons","Plasma"],answer:1},
+ {category:"Science",topic:"Chemistry",type:"mcq",difficulty:"Easy",q:"What is the pH of neutral water at 25°C?",options:["3","5","7","9"],answer:2},
+ {category:"Science",topic:"Biochemistry",type:"mcq",difficulty:"Easy",q:"Which enzyme breaks down starch?",options:["Lipase","Amylase","Pepsin","Trypsin"],answer:1},
+ {category:"Science",topic:"Biology",type:"mcq",difficulty:"Easy",q:"Which gas do plants absorb during photosynthesis?",options:["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],answer:2},
+ {category:"Science",topic:"Cell Biology",type:"mcq",difficulty:"Easy",q:"Which part of the cell contains most of its genetic material?",options:["Nucleus","Cell membrane","Cytoplasm","Lysosome"],answer:0}
+];
+let questionBank=[...DEFAULT_QUESTIONS];
+
+function show(section){
+ ["home","adminLogin","adminPanel","lobby","quiz","results"].forEach(id=>$(id).classList.add("hidden"));
+ $(section).classList.remove("hidden");
+}
+function message(text){$("message").textContent=text;}
+function makePin(){return String(Math.floor(100000+Math.random()*900000));}
+function shuffleIndices(length){
+ const a=Array.from({length},(_,i)=>i);
+ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+ return a;
+}
+async function authenticate(){
+ if(auth.currentUser){uid=auth.currentUser.uid;return;}
+ const result=await signInAnonymously(auth);uid=result.user.uid;
+}
+function getRoomQuestions(){return roomData?.questions||[];}
+
+window.showAdminLogin=function(){show("adminLogin");message("");};
+window.adminLogin=function(){
+ const username=$("adminUsername").value.trim(),password=$("adminPassword").value;
+ if(username===ADMIN_USERNAME&&password===ADMIN_PASSWORD){
+  isAdminLoggedIn=true;$("adminPassword").value="";show("adminPanel");renderQuestionBank();updateAvailableCount();message("");
+ }else message("Incorrect admin username or password.");
+};
+window.adminLogout=function(){isAdminLoggedIn=false;isHost=false;show("home");message("Admin logged out.");};
+
+window.updateQuestionForm=function(){
+ const type=$("newType").value;
+ $("mcqFields").classList.toggle("hidden",type!=="mcq");
+ $("mcqCorrectField").classList.toggle("hidden",type!=="mcq");
+ $("answerFields").classList.toggle("hidden",type==="mcq"||type==="truefalse");
+ $("trueFalseFields").classList.toggle("hidden",type!=="truefalse");
+};
+window.toggleCustomCount=function(){
+ $("customCount").classList.toggle("hidden",$("questionCount").value!=="custom");
+ updateAvailableCount();
+};
+function filteredQuestions(){
+ const category=$("filterCategory").value,topic=$("filterTopic").value.trim().toLowerCase();
+ const type=$("filterType").value,difficulty=$("filterDifficulty").value;
+ return questionBank.filter(q=>(category==="All"||q.category===category)&&(!topic||q.topic.toLowerCase().includes(topic))&&(type==="All"||q.type===type)&&(difficulty==="Mixed"||q.difficulty===difficulty));
+}
+window.updateAvailableCount=function(){
+ const count=filteredQuestions().length;
+ $("availableCount").textContent="Questions available for these settings: "+count;
+};
+["filterCategory","filterTopic","filterType","filterDifficulty"].forEach(id=>{
+ document.addEventListener("DOMContentLoaded",()=>$(id).addEventListener(id==="filterTopic"?"input":"change",updateAvailableCount));
+});
+window.addQuestionToBank=function(){
+ const category=$("newCategory").value,topic=$("newTopic").value.trim(),type=$("newType").value;
+ const difficulty=$("newDifficulty").value,q=$("newQuestion").value.trim();
+ if(!topic||!q){$("bankMessage").textContent="Please enter both a topic and a question.";return;}
+ let item={category,topic,type,difficulty,q};
+ if(type==="mcq"){
+  const options=[0,1,2,3].map(i=>$("opt"+i).value.trim());
+  if(options.some(x=>!x)){$("bankMessage").textContent="Please fill all four options.";return;}
+  item.options=options;item.answer=Number($("correctOption").value);
+ }else if(type==="truefalse"){
+  item.answer=$("tfAnswer").value==="true";
+ }else{
+  const answer=$("newAnswer").value.trim();
+  if(!answer){$("bankMessage").textContent="Please enter the correct answer.";return;}
+  item.answer=answer;
+ }
+ questionBank.push(item);
+ $("newTopic").value="";$("newQuestion").value="";$("newAnswer").value="";
+ ["opt0","opt1","opt2","opt3"].forEach(id=>$(id).value="");
+ $("bankMessage").textContent="Question added successfully!";
+ renderQuestionBank();updateAvailableCount();
+};
+window.removeBankQuestion=function(index){
+ if(index<DEFAULT_QUESTIONS.length){$("bankMessage").textContent="The original sample questions cannot be removed.";return;}
+ questionBank.splice(index,1);renderQuestionBank();updateAvailableCount();
+};
+function renderQuestionBank(){
+ $("questionBankList").innerHTML=questionBank.map((q,i)=>`<div class="question-bank-item"><strong>${i+1}. ${escapeHTML(q.q)}</strong><div class="small-note">${escapeHTML(q.category)} · ${escapeHTML(q.topic)} · ${typeLabel(q.type)} · ${escapeHTML(q.difficulty)}</div>${i>=DEFAULT_QUESTIONS.length?`<button class="secondary" onclick="removeBankQuestion(${i})">Remove</button>`:""}</div>`).join("");
+}
+function typeLabel(type){return ({mcq:"MCQ",truefalse:"True/False",fill:"Fill in the Blanks",oneword:"One-word"})[type]||type;}
+
+window.createGame=async function(){
+ if(!isAdminLoggedIn){message("Please log in as admin to host a game.");show("adminLogin");return;}
+ try{
+  const matches=filteredQuestions();
+  let requested=$("questionCount").value==="custom"?Number($("customCount").value):Number($("questionCount").value);
+  if(!Number.isInteger(requested)||requested<1||requested>100){message("Please select a valid question count between 1 and 100.");return;}
+  if(matches.length<requested){message(`Only ${matches.length} matching questions are available. Add more questions or choose a smaller number.`);return;}
+  const selected=shuffleIndices(matches.length).slice(0,requested).map(i=>matches[i]);
+  message("Creating your game...");await authenticate();isHost=true;
+  let roomAvailable=false;
+  while(!roomAvailable){roomCode=makePin();const existing=await get(ref(db,"rooms/"+roomCode));roomAvailable=!existing.exists();}
+  await set(ref(db,"rooms/"+roomCode),{
+   hostUid:uid,status:"lobby",questions:selected,playerGames:null,
+   players:{[uid]:{name:"Host",score:0}},createdAt:Date.now(),
+   settings:{category:$("filterCategory").value,topic:$("filterTopic").value.trim(),type:$("filterType").value,difficulty:$("filterDifficulty").value,questionCount:requested}
+  });
+  openLobby();listenToRoom();message("");
+ }catch(error){message("Error: "+error.message);}
+};
+
+window.joinGame=async function(){
+ try{
+  const name=$("playerName").value.trim(),pin=$("joinPin").value.trim();
+  if(!name||!pin){message("Please enter your name and game PIN.");return;}
+  if(!/^\d{6}$/.test(pin)){message("Please enter a valid 6-digit PIN.");return;}
+  message("Joining game...");await authenticate();roomCode=pin;isHost=false;
+  const roomRef=ref(db,"rooms/"+roomCode),snapshot=await get(roomRef);
+  if(!snapshot.exists()){message("Game PIN not found.");return;}
+  const room=snapshot.val();
+  if(room.status!=="lobby"){message("This game has already started.");return;}
+  await set(ref(db,`rooms/${roomCode}/players/${uid}`),{name,score:0});
+  openLobby();listenToRoom();message("");
+ }catch(error){message("Error: "+error.message);}
+};
+
+function openLobby(){
+ show("lobby");$("gamePin").textContent=roomCode;
+ $("startButton").classList.toggle("hidden",!isHost);
+ $("lobbyTitle").textContent=isHost?"Host Lobby":"Waiting for the quiz to start";
+}
+function listenToRoom(){
+ onValue(ref(db,"rooms/"+roomCode),snapshot=>{
+  if(!snapshot.exists()){message("This room no longer exists.");return;}
+  roomData=snapshot.val();renderPlayers();
+  if(roomData.status==="playing"){
+   show("quiz");
+   startMyPlayerGame().catch(error=>message("Quiz setup error: "+error.message));
+   renderQuestion();
+  }
+  if(roomData.status==="finished")showResults();
+ }
+ );
+}
+function renderPlayers(){
+ const players=roomData.players||{};
+ const list=Object.entries(players);
+ $("playerList").innerHTML=list.map(([id,p])=>
+  `<div class="player"><span>${escapeHTML(p.name)} ${id===roomData.hostUid?"(Host)":""}</span><strong>${p.score||0} points</strong></div>`
+ ).join("");
+ $("lobbyStatus").textContent=list.length+" player(s) in the room";
+}
+window.startGame=async function(){
+ if(!isHost)return;
+ try{await update(ref(db,"rooms/"+roomCode),{status:"playing",playerGames:null});}
+ catch(error){message("Could not start game: "+error.message);}
+};
+
+async function startMyPlayerGame(){
+ if(playerGameListening||initializingPlayerGame)return;
+ initializingPlayerGame=true;
+ try{
+  const gameRef=ref(db,`rooms/${roomCode}/playerGames/${uid}`);
+  const questionTotal=getRoomQuestions().length;
+  await runTransaction(gameRef,current=>{
+   if(current!==null)return current;
+   return {order:shuffleIndices(questionTotal),questionIndex:0,questionStartedAt:Date.now(),phase:"question",answered:false,completed:false};
+  });
+  playerGameListening=true;
+  onValue(gameRef,snapshot=>{
+   playerGame=snapshot.val();currentQuestionShown=-1;renderQuestion();handlePlayerProgress();
+  });
+ }finally{initializingPlayerGame=false;}
+}
+function renderQuestion(){
+ if(!roomData||roomData.status!=="playing"||!playerGame)return;
+ if(playerGame.completed){
+  $("questionNumber").textContent="You have completed the quiz!";$("timer").textContent="Finished";
+  $("questionText").textContent="Great work! Please wait for the other players to finish.";
+  $("options").innerHTML="";$("textAnswerArea").classList.add("hidden");
+  $("answerStatus").textContent="Your score is saved. The final leaderboard will appear when everyone finishes.";
+  renderLiveScores();return;
+ }
+ const index=playerGame.questionIndex,questions=getRoomQuestions(),canonicalIndex=playerGame.order[index],q=questions[canonicalIndex];
+ if(!q)return;
+ if(currentQuestionShown!==index){
+  currentQuestionShown=index;$("questionNumber").textContent=`Question ${index+1} of ${playerGame.order.length}`;
+  $("questionText").textContent=q.q;$("answerStatus").textContent=playerGame.phase==="waiting"?(playerGame.lastMessage||"Moving to the next question..."):"";
+  $("options").innerHTML="";$("textAnswerArea").classList.toggle("hidden",q.type==="mcq"||q.type==="truefalse");
+  if(q.type==="mcq"){
+   q.options.forEach((option,i)=>{
+    const button=document.createElement("button");button.className="option";button.textContent=option;
+    button.disabled=playerGame.phase!=="question"||playerGame.answered;button.onclick=()=>submitAnswer(i);
+    $("options").appendChild(button);
+   });
+  }else if(q.type==="truefalse"){
+   ["True","False"].forEach((option,i)=>{
+    const button=document.createElement("button");button.className="option";button.textContent=option;
+    button.disabled=playerGame.phase!=="question"||playerGame.answered;button.onclick=()=>submitAnswer(i===0);
+    $("options").appendChild(button);
+   });
+  }else{
+   $("typedAnswer").value="";$("typedAnswer").disabled=playerGame.phase!=="question"||playerGame.answered;
+   $("submitTextAnswer").disabled=playerGame.phase!=="question"||playerGame.answered;
+  }
+ }else if(playerGame.phase==="waiting"){
+  document.querySelectorAll(".option").forEach(b=>b.disabled=true);
+  $("typedAnswer").disabled=true;$("submitTextAnswer").disabled=true;
+  if(playerGame.lastMessage)$("answerStatus").textContent=playerGame.lastMessage;
+ }
+ updateTimer();renderLiveScores();
+}
+function updateTimer(){
+ clearInterval(timerInterval);
+ const tick=()=>{
+  if(!playerGame||playerGame.completed)return;
+  if(playerGame.phase==="waiting"){
+   const left=Math.max(0,Math.ceil(((playerGame.transitionAt||Date.now())-Date.now())/1000));
+   $("timer").textContent=left>0?`Next question in ${left}...`:"Next question...";return;
+  }
+  const elapsed=Date.now()-(playerGame.questionStartedAt||Date.now());
+  const remaining=Math.max(0,QUESTION_SECONDS-Math.floor(elapsed/1000));
+  $("timer").textContent=remaining+" seconds";
+  if(remaining<=0){clearInterval(timerInterval);if(!playerGame.answered)expireQuestion();}
+ };
+ tick();timerInterval=setInterval(tick,200);
+}
+async function expireQuestion(){
+ if(!playerGame||playerGame.phase!=="question"||playerGame.answered)return;
+ const gameRef=ref(db,`rooms/${roomCode}/playerGames/${uid}`);
+ await update(gameRef,{phase:"waiting",answered:true,transitionAt:Date.now()+WAIT_SECONDS*1000,lastMessage:"Time is up!"});
+}
+async function submitAnswer(choice){
+ if(!roomData||!playerGame||playerGame.phase!=="question"||playerGame.answered)return;
+ const personalIndex=playerGame.questionIndex,canonicalIndex=playerGame.order[personalIndex],q=getRoomQuestions()[canonicalIndex];
+ const elapsed=Date.now()-(playerGame.questionStartedAt||Date.now());
+ if(elapsed>=QUESTION_SECONDS*1000){await expireQuestion();return;}
+ const correct=q.type==="mcq"?q.answer===choice:q.type==="truefalse"?q.answer===choice:false;
+ await saveAnswer(choice,correct,elapsed,personalIndex,canonicalIndex);
+}
+window.submitTextAnswer=async function(){
+ if(!roomData||!playerGame||playerGame.phase!=="question"||playerGame.answered)return;
+ const typed=$("typedAnswer").value.trim();if(!typed){$("answerStatus").textContent="Please type your answer.";return;}
+ const personalIndex=playerGame.questionIndex,canonicalIndex=playerGame.order[personalIndex],q=getRoomQuestions()[canonicalIndex];
+ const elapsed=Date.now()-(playerGame.questionStartedAt||Date.now());
+ if(elapsed>=QUESTION_SECONDS*1000){await expireQuestion();return;}
+ const correct=typed.toLowerCase().replace(/[.!?]/g,"").trim()===String(q.answer).toLowerCase().replace(/[.!?]/g,"").trim();
+ await saveAnswer(typed,correct,elapsed,personalIndex,canonicalIndex);
+};
+async function saveAnswer(choice,correct,elapsed,personalIndex,canonicalIndex){
+ const secondsLeft=Math.max(0,QUESTION_SECONDS-Math.floor(elapsed/1000)),points=correct?500+secondsLeft*25:0;
+ document.querySelectorAll(".option").forEach(button=>button.disabled=true);
+ $("typedAnswer").disabled=true;$("submitTextAnswer").disabled=true;
+ const answerRef=ref(db,`rooms/${roomCode}/playerGames/${uid}/answers/${personalIndex}`);
+ try{
+  const result=await runTransaction(answerRef,current=>{if(current!==null)return;return {choice,points,correct,canonicalQuestionIndex:canonicalIndex};});
+  let feedback="Your answer was already submitted.";
+  if(result.committed){if(points>0)await update(ref(db,`rooms/${roomCode}/players/${uid}`),{score:increment(points)});feedback=correct?`Correct! You earned ${points} points.`:"Not quite! Better luck next time.";}
+  await update(ref(db,`rooms/${roomCode}/playerGames/${uid}`),{phase:"waiting",answered:true,transitionAt:Date.now()+WAIT_SECONDS*1000,lastMessage:feedback});
+ }catch(error){$("answerStatus").textContent="Could not submit: "+error.message;}
+}
+function handlePlayerProgress(){
+ if(!playerGame||playerGame.completed)return;
+ clearTimeout(advanceTimeout);
+ if(playerGame.phase==="waiting"){
+  const delay=Math.max(0,(playerGame.transitionAt||Date.now())-Date.now());advanceTimeout=setTimeout(advanceMyQuestion,delay);
+ }
+}
+async function advanceMyQuestion(){
+ const gameRef=ref(db,`rooms/${roomCode}/playerGames/${uid}`);
+ const result=await runTransaction(gameRef,current=>{
+  if(!current||current.completed||current.phase!=="waiting")return current;
+  const next=current.questionIndex+1;
+  if(next>=current.order.length)return {...current,completed:true,phase:"completed"};
+  return {...current,questionIndex:next,questionStartedAt:Date.now(),phase:"question",answered:false,lastMessage:""};
+ });
+ if(result.committed&&result.snapshot.val()?.completed)await checkIfEveryoneFinished();
+}
+async function checkIfEveryoneFinished(){
+ const snap=await get(ref(db,"rooms/"+roomCode));if(!snap.exists())return;
+ const data=snap.val(),players=Object.keys(data.players||{}),games=data.playerGames||{};
+ const everyoneDone=players.length>0&&players.every(id=>games[id]?.completed===true);
+ if(everyoneDone)await update(ref(db,"rooms/"+roomCode),{status:"finished"});
+}
+function renderLiveScores(){
+ const players=Object.values(roomData?.players||{}).sort((a,b)=>(b.score||0)-(a.score||0));
+ $("liveScores").innerHTML="<h3>Live Scores</h3>"+players.map(p=>`<div class="player"><span>${escapeHTML(p.name)}</span><strong>${p.score||0}</strong></div>`).join("");
+}
+function showResults(){
+ clearInterval(timerInterval);clearTimeout(advanceTimeout);
+ const players=Object.values(roomData.players||{}).sort((a,b)=>(b.score||0)-(a.score||0));
+ show("results");
+ $("finalScores").innerHTML=`<table><tr><th>Rank</th><th>Player</th><th>Score</th></tr>
+ ${players.map((p,i)=>`<tr><td>${i+1}</td><td>${escapeHTML(p.name)}</td><td>${p.score||0}</td></tr>`).join("")}</table>
+ <h3 style="text-align:center;color:#6558d3">🏆 Winner: ${players.length?escapeHTML(players[0].name):"No players"}</h3>`;
+}
+function escapeHTML(value){
+ return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]));
+}
+window.addEventListener("unhandledrejection",event=>{
+ const details=event.reason?.message||String(event.reason||"Unknown error");message("Error: "+details);
+});
+window.addEventListener("error",event=>{if(event.message)message("Error: "+event.message);});
+window.addEventListener("DOMContentLoaded",()=>{
+ updateQuestionForm();renderQuestionBank();updateAvailableCount();
+ ["filterCategory","filterTopic","filterType","filterDifficulty"].forEach(id=>$(id).addEventListener(id==="filterTopic"?"input":"change",updateAvailableCount));
+});
+</script>
+</body>
+</html>
